@@ -1,20 +1,16 @@
-package com.example.geo_moba
+package com.example.geo_moba // Paquete raíz de Android.
 
-import android.os.Bundle
-import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import android.os.Bundle // Ciclo de vida de Activity.
+import androidx.activity.ComponentActivity // Activity base para Compose.
+import androidx.activity.compose.setContent // Permite setear contenido Compose.
+import com.example.geo_moba.GeoMobaApp // Import del composable raíz.
 
-class MainActivity : AppCompatActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContentView(R.layout.activity_main)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
+class MainActivity : ComponentActivity() { // Punto de entrada de Android (manifest).
+    override fun onCreate(savedInstanceState: Bundle?) { // Se llama al crear la Activity.
+        super.onCreate(savedInstanceState) // Llama a la implementación base.
+
+        setContent { // Reemplaza setContentView con Compose.
+            GeoMobaApp() // Monta el árbol de Composables comenzando por nuestra App.
         }
     }
 }
