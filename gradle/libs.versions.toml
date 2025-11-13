@@ -1,5 +1,5 @@
 [versions]
-agp = "8.12.3"                # Android Gradle Plugin (versión de compilación)
+agp = "8.13.0"                # Android Gradle Plugin (versión de compilación)
 kotlin = "2.0.21"             # Versión de Kotlin que usa todo el proyecto
 coreKtx = "1.17.0"
 junit = "4.13.2"

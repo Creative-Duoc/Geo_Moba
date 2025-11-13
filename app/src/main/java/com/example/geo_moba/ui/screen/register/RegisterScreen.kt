@@ -3,9 +3,12 @@ package com.example.geo_moba.ui.screen.register
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment // Importación necesaria para centrar
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight // Importación para negrita
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp // Importación para tamaño de fuente
 import androidx.navigation.NavHostController
 import com.example.geo_moba.navigation.Routes
 
@@ -18,12 +21,24 @@ fun RegisterScreen(navController: NavHostController) {
 
     Column(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxSize() // Ocupa toda la pantalla
             .padding(24.dp),
-        verticalArrangement = Arrangement.Center
+        // Centrado vertical (para centrar el formulario en la pantalla)
+        verticalArrangement = Arrangement.Center,
+        // Centrado horizontal (para centrar los elementos dentro de la columna)
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Registro de Usuario", style = MaterialTheme.typography.headlineMedium)
-        Spacer(Modifier.height(16.dp))
+
+        // --- TÍTULO GEO-MOBA ---
+        Text(
+            text = "GEO-MOBA",
+            fontSize = 48.sp, // Tamaño grande
+            fontWeight = FontWeight.Bold, // Estilo negrita
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(bottom = 48.dp) // Menos espacio que en login porque hay más campos
+        )
+
+        // --- CAMPOS DE TEXTO ---
 
         TextField(
             value = name,
@@ -53,6 +68,8 @@ fun RegisterScreen(navController: NavHostController) {
 
         Spacer(Modifier.height(24.dp))
 
+        // --- BOTONES ---
+
         Button(
             onClick = { navController.navigate(Routes.Home) },
             modifier = Modifier.fillMaxWidth()
@@ -65,5 +82,13 @@ fun RegisterScreen(navController: NavHostController) {
         TextButton(onClick = { navController.popBackStack() }) {
             Text("Volver al inicio de sesión")
         }
+
+        // --- MENSAJE DE AGRADECIMIENTO ---
+        Spacer(Modifier.height(48.dp)) // Espacio para separar el formulario
+        Text(
+            text = "Gracias por usar nuestra aplicación.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
