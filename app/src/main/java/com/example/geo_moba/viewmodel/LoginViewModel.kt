@@ -1,45 +1,78 @@
-package com.example.geo_moba.viewmodel // Paquete de lógica/estado.
+package com.example.geo_moba.viewmodel
 
-// ViewModel base de AndroidX.
-import androidx.lifecycle.ViewModel
-
-// StateFlow para estado observable por Compose.
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.geo_moba.model.AppDatabase
+import com.example.geo_moba.model.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
-// Nuestro estado de UI.
-import com.example.geo_moba.model.LoginUiState
+/**
+ * Estado de la UI de login.
+ */
+data class LoginUiState(
+    val email: String = "",
+    val password: String = "",
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null,
+    val isSuccess: Boolean = false
+)
 
-class LoginViewModel : ViewModel() { // ViewModel vive entre recomposiciones (sobrevive a rotaciones).
+/**
+ * ViewModel para la pantalla de login.
+ * Maneja la autenticación de usuarios contra la base de datos local.
+ */
+class LoginViewModel(application: Application) : AndroidViewModel(application) {
 
-    // _uiState: mutable solo dentro del VM (encapsulación).
+    private val repository: UserRepository
+
+    init {
+        val userDao = AppDatabase.getInstance(application).userDao()
+        repository = UserRepository(userDao)
+    }
+
     private val _uiState = MutableStateFlow(LoginUiState())
-    // uiState: exposición inmutable para la UI.
-    val uiState: StateFlow<LoginUiState> = _uiState
+    val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
-    // Actualiza el email en el estado (inmutabilidad con copy()).
     fun onEmailChange(newEmail: String) {
-        _uiState.update { it.copy(email = newEmail) }
+        _uiState.value = _uiState.value.copy(email = newEmail, errorMessage = null)
     }
 
-    // Actualiza el password en el estado.
     fun onPasswordChange(newPassword: String) {
-        _uiState.update { it.copy(password = newPassword) }
+        _uiState.value = _uiState.value.copy(password = newPassword, errorMessage = null)
     }
 
-    // Lógica de "iniciar sesión" simulada (sin backend).
+    /**
+     * Intenta hacer login verificando las credenciales en la base de datos.
+     */
     fun login() {
-        // Limpia errores previos y activa loading.
-        _uiState.update { it.copy(isLoading = true, errorMessage = null, isSuccess = false) }
+        val currentState = _uiState.value
 
-        // Regla simple de demo: credenciales fijas válidas.
-        val ok = _uiState.value.email == "user@duoc.cl" && _uiState.value.password == "1234"
+        // Validaciones
+        if (currentState.email.isBlank() || currentState.password.isBlank()) {
+            _uiState.value = currentState.copy(errorMessage = "Complete todos los campos")
+            return
+        }
 
-        // Apaga loading y setea resultado (éxito o error).
-        _uiState.update {
-            if (ok) it.copy(isLoading = false, isSuccess = true)
-            else it.copy(isLoading = false, errorMessage = "Credenciales incorrectas")
+        _uiState.value = currentState.copy(isLoading = true, errorMessage = null)
+
+        viewModelScope.launch {
+            val result = repository.login(currentState.email, currentState.password)
+
+            result.fold(
+                onSuccess = {
+                    _uiState.value = LoginUiState(isSuccess = true)
+                },
+                onFailure = { error ->
+                    _uiState.value = currentState.copy(
+                        isLoading = false,
+                        errorMessage = error.message ?: "Error al iniciar sesión"
+                    )
+                }
+            )
         }
     }
 }

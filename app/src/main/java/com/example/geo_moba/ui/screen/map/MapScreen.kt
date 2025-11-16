@@ -20,19 +20,26 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.core.content.ContextCompat
+import com.example.geo_moba.viewmodel.DeviceViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.MarkerOptions
 
 @SuppressLint("MissingPermission")
 @Composable
-fun MapScreen(navController: NavHostController) {
+fun MapScreen(
+    navController: NavHostController,
+    deviceViewModel: DeviceViewModel = viewModel()
+) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val devices by deviceViewModel.devices.collectAsState()
 
     // Manejo de permiso de ubicación en tiempo de ejecución
     var hasLocationPermission by remember { mutableStateOf(false) }
@@ -71,18 +78,37 @@ fun MapScreen(navController: NavHostController) {
                 lifecycleOwner = lifecycleOwner,
                 onMapReady = { googleMap ->
                     // Configuración inicial del mapa
-                    val defaultLocation = LatLng(-33.516668, -70.600139) // Sydney como ejemplo
                     googleMap.uiSettings.isZoomControlsEnabled = true
 
-                    // Añadir marcador de ejemplo
-                    googleMap.addMarker(
-                        MarkerOptions()
-                            .position(defaultLocation)
-                            .title("Lugar ejemplo")
-                    )
+                    // Añadir marcadores desde los dispositivos del repositorio
+                    val boundsBuilder = LatLngBounds.Builder()
 
-                    // Centrar cámara
-                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLocation, 10f))
+                    devices.forEach { device ->
+                        val position = LatLng(device.lat, device.lon)
+
+                        googleMap.addMarker(
+                            MarkerOptions()
+                                .position(position)
+                                .title(device.name)
+                                .snippet("ID: ${device.id}")
+                        )
+
+                        boundsBuilder.include(position)
+                    }
+
+                    // Centrar cámara para mostrar todos los dispositivos
+                    if (devices.isNotEmpty()) {
+                        try {
+                            val bounds = boundsBuilder.build()
+                            val padding = 150 // píxeles de margen
+                            googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, padding))
+                        } catch (e: IllegalStateException) {
+                            // Si solo hay un dispositivo, usar zoom manual
+                            val firstDevice = devices.first()
+                            val position = LatLng(firstDevice.lat, firstDevice.lon)
+                            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(position, 12f))
+                        }
+                    }
 
                     // Habilitar my-location si el permiso está concedido
                     if (hasLocationPermission) {
