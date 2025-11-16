@@ -72,6 +72,7 @@ dependencies {
     implementation(libs.material)                    // Componentes Material Design clásicos.
     implementation(libs.androidx.activity)           // Soporte para Activities.
     implementation(libs.androidx.constraintlayout)   // Layout flexible y moderno.
+    implementation(libs.play.services.maps)          // Google Maps SDK for Android.
     testImplementation(libs.junit)                   // Framework de pruebas unitarias.
     androidTestImplementation(libs.androidx.junit)   // Pruebas instrumentadas.
     androidTestImplementation(libs.androidx.espresso.core) // Pruebas UI automáticas.
