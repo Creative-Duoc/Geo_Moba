@@ -2,7 +2,6 @@ package com.example.geo_moba.data.repository
 
 import com.example.geo_moba.data.local.UserDao
 import com.example.geo_moba.model.UserEntity
-
 class UserRepository(private val userDao: UserDao) {
 
     /**
