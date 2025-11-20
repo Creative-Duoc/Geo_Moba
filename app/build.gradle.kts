@@ -18,7 +18,7 @@ android {
 
     defaultConfig {
         // Identificador único de la app
-        applicationId = "com.example.geo_moba"
+        applicationId = "com.example_geo_moba"
 
         // Versión mínima de Android soportada
         minSdk = 24
@@ -32,6 +32,7 @@ android {
 
         // Runner de pruebas instrumentadas
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
     }
 
     // --- BLOQUE DE BUILD TYPES ---

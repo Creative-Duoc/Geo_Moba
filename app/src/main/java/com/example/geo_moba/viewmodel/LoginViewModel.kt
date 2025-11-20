@@ -3,7 +3,8 @@ package com.example.geo_moba.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.delay
+import com.example.geo_moba.data.local.AppDatabase
+import com.example.geo_moba.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,6 +26,11 @@ data class LoginUiState(
  * Maneja la autenticación de usuarios contra la base de datos local.
  */
 class LoginViewModel(application: Application) : AndroidViewModel(application) {
+
+    // Instancia de la base de datos y repositorio (Room)
+    private val database = AppDatabase.getInstance(application)
+    private val userDao = database.userDao()
+    private val userRepository = UserRepository(userDao)
 
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
@@ -52,10 +58,20 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = s.copy(isLoading = true, errorMessage = null)
 
         viewModelScope.launch {
-            // Simulación de login sin base de datos.
-            delay(800)
+            try {
+                // Consulta real a través del repositorio
+                val result = userRepository.login(s.email, s.password)
 
-            _uiState.value = LoginUiState(isSuccess = true)
+                if (result.isSuccess) {
+                    // Login exitoso
+                    _uiState.value = LoginUiState(isSuccess = true)
+                } else {
+                    val err = result.exceptionOrNull()?.message ?: "Usuario o contraseña incorrectos"
+                    _uiState.value = s.copy(isLoading = false, errorMessage = err)
+                }
+            } catch (e: Exception) {
+                _uiState.value = s.copy(isLoading = false, errorMessage = "Error al acceder a la base de datos")
+            }
         }
     }
 }

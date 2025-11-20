@@ -2,7 +2,10 @@ package com.example.geo_moba.ui.screen.map
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.pm.PackageManager
+import android.location.Location
+import android.location.LocationManager
 import android.os.Bundle
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -16,7 +19,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -31,7 +34,6 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.MarkerOptions
 
-@SuppressLint("MissingPermission")
 @Composable
 fun MapScreen(
     navController: NavHostController,
@@ -40,6 +42,9 @@ fun MapScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val devices by deviceViewModel.devices.collectAsState()
+
+    // Estado para la ubicación del usuario
+    var userLocation by remember { mutableStateOf<LatLng?>(null) }
 
     // Manejo de permiso de ubicación en tiempo de ejecución
     var hasLocationPermission by remember { mutableStateOf(false) }
@@ -56,6 +61,32 @@ fun MapScreen(
         if (granted) hasLocationPermission = true else launcher.launch(permission)
     }
 
+    // Cuando el permiso esté concedido, obtener la última ubicación disponible
+    LaunchedEffect(hasLocationPermission) {
+        if (hasLocationPermission) {
+            try {
+                val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+                // Revisar proveedores disponibles y tomar la última ubicación más reciente
+                val providers = lm.getProviders(true)
+                var bestLocation: Location? = null
+                for (provider in providers) {
+                    val l = lm.getLastKnownLocation(provider)
+                    if (l != null) {
+                        if (bestLocation == null || l.time > bestLocation.time) {
+                            bestLocation = l
+                        }
+                    }
+                }
+                bestLocation?.let { loc ->
+                    userLocation = LatLng(loc.latitude, loc.longitude)
+                }
+            } catch (e: Exception) {
+                // No bloquear la UI si falla la obtención de la ubicación
+                e.printStackTrace()
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -65,7 +96,7 @@ fun MapScreen(
         // Barra superior con botón atrás que usa navController
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = { navController.popBackStack() }) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
             }
             Text("Mapa", style = MaterialTheme.typography.headlineMedium)
         }
@@ -96,17 +127,23 @@ fun MapScreen(
                         boundsBuilder.include(position)
                     }
 
-                    // Centrar cámara para mostrar todos los dispositivos
-                    if (devices.isNotEmpty()) {
+                    // Agregar marcador de la ubicación del usuario si existe (quitado el marcador)
+                    userLocation?.let { ul ->
+                        boundsBuilder.include(ul)
+                    }
+
+                    // Centrar cámara para mostrar todos los puntos (dispositivos + usuario si existe)
+                    if (devices.isNotEmpty() || userLocation != null) {
                         try {
                             val bounds = boundsBuilder.build()
                             val padding = 150 // píxeles de margen
                             googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, padding))
-                        } catch (e: IllegalStateException) {
-                            // Si solo hay un dispositivo, usar zoom manual
-                            val firstDevice = devices.first()
-                            val position = LatLng(firstDevice.latitude, firstDevice.longitude)
-                            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(position, 12f))
+                        } catch (_: IllegalStateException) {
+                            // Si hay problema construyendo bounds (por ejemplo un solo punto), usar zoom manual
+                            val firstPosition = userLocation ?: devices.firstOrNull()?.let { LatLng(it.latitude, it.longitude) }
+                            firstPosition?.let { pos ->
+                                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(pos, 12f))
+                            }
                         }
                     }
 
