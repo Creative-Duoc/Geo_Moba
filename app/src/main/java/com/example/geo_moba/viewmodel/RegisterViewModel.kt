@@ -3,16 +3,14 @@ package com.example.geo_moba.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.geo_moba.model.AppDatabase
-import com.example.geo_moba.model.UserRepository
+import com.example.geo_moba.data.local.AppDatabase
+import com.example.geo_moba.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-/**
- * Estado de la UI de registro.
- */
+// Estado de la UI de registro.
 data class RegisterUiState(
     val name: String = "",
     val email: String = "",
@@ -22,84 +20,65 @@ data class RegisterUiState(
     val isSuccess: Boolean = false
 )
 
-/**
- * ViewModel para la pantalla de registro.
- * Maneja la lógica de registro de usuarios.
- */
 class RegisterViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repository: UserRepository
+    // 1. Obtener la instancia de la base de datos
+    private val database = AppDatabase.getInstance(application)
 
-    init {
-        val userDao = AppDatabase.getInstance(application).userDao()
-        repository = UserRepository(userDao)
-    }
+    // 2. Obtener el UserDao de la base de datos
+    private val userDao = database.userDao()
+
+    // 3. Crear el repositorio con el UserDao
+    private val userRepository = UserRepository(userDao)
 
     private val _uiState = MutableStateFlow(RegisterUiState())
     val uiState: StateFlow<RegisterUiState> = _uiState.asStateFlow()
 
-    fun onNameChange(newName: String) {
-        _uiState.value = _uiState.value.copy(name = newName, errorMessage = null)
-    }
+    fun onNameChange(newName: String) { _uiState.value = _uiState.value.copy(name = newName, errorMessage = null) }
+    fun onEmailChange(newEmail: String) { _uiState.value = _uiState.value.copy(email = newEmail, errorMessage = null) }
+    fun onPasswordChange(newPassword: String) { _uiState.value = _uiState.value.copy(password = newPassword, errorMessage = null) }
 
-    fun onEmailChange(newEmail: String) {
-        _uiState.value = _uiState.value.copy(email = newEmail, errorMessage = null)
-    }
-
-    fun onPasswordChange(newPassword: String) {
-        _uiState.value = _uiState.value.copy(password = newPassword, errorMessage = null)
-    }
-
-    /**
-     * Intenta registrar al usuario.
-     * Valida los campos y llama al repository.
-     */
     fun register() {
-        val currentState = _uiState.value
+        val s = _uiState.value
 
-        // Validaciones
-        if (currentState.name.isBlank()) {
-            _uiState.value = currentState.copy(errorMessage = "El nombre es obligatorio")
+        // Validaciones de los campos
+        if (s.name.isBlank() || s.email.isBlank() || s.password.isBlank()) {
+            _uiState.value = s.copy(errorMessage = "Complete todos los campos")
+            return
+        }
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(s.email).matches()) {
+            _uiState.value = s.copy(errorMessage = "Correo inválido")
+            return
+        }
+        if (s.password.length < 6) {
+            _uiState.value = s.copy(errorMessage = "Mínimo 6 caracteres")
             return
         }
 
-        if (currentState.email.isBlank()) {
-            _uiState.value = currentState.copy(errorMessage = "El correo es obligatorio")
-            return
-        }
+        // Mostrar loading
+        _uiState.value = s.copy(isLoading = true, errorMessage = null)
 
-        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(currentState.email).matches()) {
-            _uiState.value = currentState.copy(errorMessage = "Correo electrónico inválido")
-            return
-        }
-
-        if (currentState.password.length < 6) {
-            _uiState.value = currentState.copy(errorMessage = "La contraseña debe tener al menos 6 caracteres")
-            return
-        }
-
-        // Intentar registro
-        _uiState.value = currentState.copy(isLoading = true, errorMessage = null)
-
+        // Usar coroutine para operación asíncrona
         viewModelScope.launch {
-            val result = repository.registerUser(
-                name = currentState.name,
-                email = currentState.email,
-                password = currentState.password
+            // Llamar al repositorio para registrar el usuario en SQLite
+            val result = userRepository.registerUser(
+                name = s.name,
+                email = s.email,
+                password = s.password
             )
 
-            result.fold(
-                onSuccess = {
-                    _uiState.value = RegisterUiState(isSuccess = true)
-                },
-                onFailure = { error ->
-                    _uiState.value = currentState.copy(
-                        isLoading = false,
-                        errorMessage = error.message ?: "Error al registrar"
-                    )
-                }
-            )
+            // Manejar el resultado
+            if (result.isSuccess) {
+                // Registro exitoso
+                _uiState.value = RegisterUiState(isSuccess = true)
+            } else {
+                // Error en el registro
+                val errorMsg = result.exceptionOrNull()?.message ?: "Error al registrar"
+                _uiState.value = s.copy(
+                    isLoading = false,
+                    errorMessage = errorMsg
+                )
+            }
         }
     }
 }
-

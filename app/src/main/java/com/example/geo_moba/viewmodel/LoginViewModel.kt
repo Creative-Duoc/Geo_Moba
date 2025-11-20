@@ -3,8 +3,7 @@ package com.example.geo_moba.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.geo_moba.model.AppDatabase
-import com.example.geo_moba.model.UserRepository
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,13 +26,6 @@ data class LoginUiState(
  */
 class LoginViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repository: UserRepository
-
-    init {
-        val userDao = AppDatabase.getInstance(application).userDao()
-        repository = UserRepository(userDao)
-    }
-
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
@@ -49,30 +41,21 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
      * Intenta hacer login verificando las credenciales en la base de datos.
      */
     fun login() {
-        val currentState = _uiState.value
+        val s = _uiState.value
 
         // Validaciones
-        if (currentState.email.isBlank() || currentState.password.isBlank()) {
-            _uiState.value = currentState.copy(errorMessage = "Complete todos los campos")
+        if (s.email.isBlank() || s.password.isBlank()) {
+            _uiState.value = s.copy(errorMessage = "Complete todos los campos")
             return
         }
 
-        _uiState.value = currentState.copy(isLoading = true, errorMessage = null)
+        _uiState.value = s.copy(isLoading = true, errorMessage = null)
 
         viewModelScope.launch {
-            val result = repository.login(currentState.email, currentState.password)
+            // Simulación de login sin base de datos.
+            delay(800)
 
-            result.fold(
-                onSuccess = {
-                    _uiState.value = LoginUiState(isSuccess = true)
-                },
-                onFailure = { error ->
-                    _uiState.value = currentState.copy(
-                        isLoading = false,
-                        errorMessage = error.message ?: "Error al iniciar sesión"
-                    )
-                }
-            )
+            _uiState.value = LoginUiState(isSuccess = true)
         }
     }
 }

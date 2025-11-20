@@ -84,7 +84,7 @@ fun MapScreen(
                     val boundsBuilder = LatLngBounds.Builder()
 
                     devices.forEach { device ->
-                        val position = LatLng(device.lat, device.lon)
+                        val position = LatLng(device.latitude, device.longitude)
 
                         googleMap.addMarker(
                             MarkerOptions()
@@ -105,7 +105,7 @@ fun MapScreen(
                         } catch (e: IllegalStateException) {
                             // Si solo hay un dispositivo, usar zoom manual
                             val firstDevice = devices.first()
-                            val position = LatLng(firstDevice.lat, firstDevice.lon)
+                            val position = LatLng(firstDevice.latitude, firstDevice.longitude)
                             googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(position, 12f))
                         }
                     }

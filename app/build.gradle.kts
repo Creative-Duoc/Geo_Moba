@@ -3,8 +3,8 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    id("org.jetbrains.kotlin.kapt")
     id("org.jetbrains.kotlin.plugin.compose") // 👈 Ahora sí será encontrado
+    id("org.jetbrains.kotlin.kapt")
 }
 
 
@@ -94,12 +94,6 @@ dependencies {
     // Runtime Compose: maneja ciclos de vida y recomposición
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.6")
 
-    // --- ROOM (BASE DE DATOS LOCAL) ---
-    implementation("androidx.room:room-runtime:2.6.1") // Núcleo de Room (SQLite ORM)
-    implementation("androidx.room:room-ktx:2.6.1")     // Extensiones Kotlin (coroutines/Flow)
-    kapt("androidx.room:room-compiler:2.6.1")
-    // Genera código DAO y entidades.
-
     // --- COROUTINES (ASINCRONÍA) ---
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1") // Corrutinas base
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1") // Dispatcher para Android.
@@ -110,4 +104,7 @@ dependencies {
     // --- DEBUG Y HERRAMIENTAS DE VISTA PREVIA ---
     debugImplementation("androidx.compose.ui:ui-tooling:1.6.7") // Herramientas de diseño
     debugImplementation("androidx.compose.ui:ui-test-manifest:1.6.7") // Manifesto de pruebas UI
+    implementation("androidx.room:room-runtime:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
+    kapt("androidx.room:room-compiler:2.6.1")
 }

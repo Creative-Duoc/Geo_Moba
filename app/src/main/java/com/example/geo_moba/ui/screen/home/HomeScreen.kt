@@ -47,7 +47,7 @@ fun HomeScreen(
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            text = "Lat: ${"%.4f".format(device.lat)}, Lng: ${"%.4f".format(device.lon)}",
+                            text = "Lat: ${"%.4f".format(device.latitude)}, Lng: ${"%.4f".format(device.longitude)}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
