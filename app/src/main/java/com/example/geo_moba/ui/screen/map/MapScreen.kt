@@ -1,7 +1,7 @@
 package com.example.geo_moba.ui.screen.map
 
 import android.Manifest
-import android.annotation.SuppressLint
+
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
@@ -47,18 +47,29 @@ fun MapScreen(
     var userLocation by remember { mutableStateOf<LatLng?>(null) }
 
     // Manejo de permiso de ubicación en tiempo de ejecución
-    var hasLocationPermission by remember { mutableStateOf(false) }
     val permission = Manifest.permission.ACCESS_FINE_LOCATION
+
+    // Verificar si ya tiene permiso guardado
+    val hasPermissionGranted = ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+
+    // Estado para saber si el usuario ya decidió (aceptó o rechazó)
+    var permissionDecided by remember { mutableStateOf(hasPermissionGranted) }
+
+    // Estado del permiso
+    var hasLocationPermission by remember { mutableStateOf(hasPermissionGranted) }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted: Boolean ->
         hasLocationPermission = granted
+        permissionDecided = true  // Usuario tomó una decisión
     }
 
+    // Pedir permiso solo si no lo tiene y aún no ha decidido
     LaunchedEffect(Unit) {
-        val granted = ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
-        if (granted) hasLocationPermission = true else launcher.launch(permission)
+        if (!hasPermissionGranted) {
+            launcher.launch(permission)
+        }
     }
 
     // Cuando el permiso esté concedido, obtener la última ubicación disponible
@@ -105,58 +116,85 @@ fun MapScreen(
 
         // Contenedor del mapa que ocupa el resto del espacio
         Box(modifier = Modifier.fillMaxSize()) {
-            GoogleMapView(
-                lifecycleOwner = lifecycleOwner,
-                onMapReady = { googleMap ->
-                    // Configuración inicial del mapa
-                    googleMap.uiSettings.isZoomControlsEnabled = true
+            // Mostrar el mapa solo después de que el usuario haya tomado una decisión
+            if (permissionDecided) {
+                GoogleMapView(
+                    lifecycleOwner = lifecycleOwner,
+                    onMapReady = { googleMap ->
+                        // Configuración inicial del mapa
+                        googleMap.uiSettings.isZoomControlsEnabled = true
 
-                    // Añadir marcadores desde los dispositivos del repositorio
-                    val boundsBuilder = LatLngBounds.Builder()
+                        // Añadir marcadores desde los dispositivos del repositorio
+                        val boundsBuilder = LatLngBounds.Builder()
 
-                    devices.forEach { device ->
-                        val position = LatLng(device.latitude, device.longitude)
+                        devices.forEach { device ->
+                            val position = LatLng(device.latitude, device.longitude)
 
-                        googleMap.addMarker(
-                            MarkerOptions()
-                                .position(position)
-                                .title(device.name)
-                                .snippet("ID: ${device.id}")
-                        )
+                            googleMap.addMarker(
+                                MarkerOptions()
+                                    .position(position)
+                                    .title(device.name)
+                                    .snippet("ID: ${device.id}")
+                            )
 
-                        boundsBuilder.include(position)
-                    }
+                            boundsBuilder.include(position)
+                        }
 
-                    // Agregar marcador de la ubicación del usuario si existe (quitado el marcador)
-                    userLocation?.let { ul ->
-                        boundsBuilder.include(ul)
-                    }
+                        // Incluir ubicación del usuario solo si existe y tenemos permiso
+                        if (hasLocationPermission) {
+                            userLocation?.let { ul ->
+                                boundsBuilder.include(ul)
+                            }
+                        }
 
-                    // Centrar cámara para mostrar todos los puntos (dispositivos + usuario si existe)
-                    if (devices.isNotEmpty() || userLocation != null) {
-                        try {
-                            val bounds = boundsBuilder.build()
-                            val padding = 150 // píxeles de margen
-                            googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, padding))
-                        } catch (_: IllegalStateException) {
-                            // Si hay problema construyendo bounds (por ejemplo un solo punto), usar zoom manual
-                            val firstPosition = userLocation ?: devices.firstOrNull()?.let { LatLng(it.latitude, it.longitude) }
-                            firstPosition?.let { pos ->
-                                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(pos, 12f))
+                        // Centrar cámara: priorizar mostrar dispositivos siempre
+                        if (devices.isNotEmpty()) {
+                            try {
+                                val bounds = boundsBuilder.build()
+                                val padding = 150 // píxeles de margen
+                                googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, padding))
+                            } catch (_: IllegalStateException) {
+                                // Si hay problema construyendo bounds (un solo punto), usar zoom manual
+                                val firstPosition = devices.firstOrNull()?.let { LatLng(it.latitude, it.longitude) }
+                                firstPosition?.let { pos ->
+                                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(pos, 12f))
+                                }
+                            }
+                        } else if (hasLocationPermission && userLocation != null) {
+                            // Si no hay dispositivos pero sí ubicación del usuario
+                            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation!!, 15f))
+                        } else {
+                            // Posición por defecto si no hay nada (opcional)
+                            val defaultPosition = LatLng(0.0, 0.0)
+                            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultPosition, 2f))
+                        }
+
+                        // Solo activar isMyLocationEnabled si tenemos permiso
+                        if (hasLocationPermission) {
+                            try {
+                                googleMap.isMyLocationEnabled = true
+                            } catch (e: SecurityException) {
+                                e.printStackTrace()
                             }
                         }
                     }
-
-                    // Habilitar my-location si el permiso está concedido
-                    if (hasLocationPermission) {
-                        try {
-                            googleMap.isMyLocationEnabled = true
-                        } catch (e: SecurityException) {
-                            e.printStackTrace()
-                        }
+                )
+            } else {
+                // Mostrar indicador de carga mientras el usuario decide
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator()
+                        Spacer(Modifier.height(16.dp))
+                        Text(
+                            "Esperando respuesta de permisos...",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
                 }
-            )
+            }
         }
     }
 }
