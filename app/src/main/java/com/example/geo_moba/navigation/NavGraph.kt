@@ -5,7 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 
-// ✅ IMPORTS CORRECTOS — uno por cada pantalla
+// IMPORTS CORRECTOS — uno por cada pantalla
 import com.example.geo_moba.ui.screen.splash.SplashScreen
 import com.example.geo_moba.ui.screen.login.LoginScreen
 import com.example.geo_moba.ui.screen.register.RegisterScreen

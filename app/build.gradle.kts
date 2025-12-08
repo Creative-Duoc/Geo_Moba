@@ -3,11 +3,9 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    id("org.jetbrains.kotlin.plugin.compose") // 👈 Ahora sí será encontrado
     id("org.jetbrains.kotlin.kapt")
+    id("org.jetbrains.kotlin.plugin.compose")
 }
-
-
 
 android {
     // Namespace de la aplicación (debe coincidir con el package del código fuente)
@@ -18,7 +16,7 @@ android {
 
     defaultConfig {
         // Identificador único de la app
-        applicationId = "com.example_geo_moba"
+        applicationId = "com.example.geo_moba"
 
         // Versión mínima de Android soportada
         minSdk = 24
@@ -32,7 +30,6 @@ android {
 
         // Runner de pruebas instrumentadas
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
     }
 
     // --- BLOQUE DE BUILD TYPES ---
@@ -95,6 +92,17 @@ dependencies {
     // Runtime Compose: maneja ciclos de vida y recomposición
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.6")
 
+    // --- ROOM (BASE DE DATOS LOCAL) ---
+    implementation("androidx.room:room-runtime:2.6.1") // Núcleo de Room (SQLite ORM)
+    implementation("androidx.room:room-ktx:2.6.1")     // Extensiones Kotlin (coroutines/Flow)
+    kapt("androidx.room:room-compiler:2.6.1")
+    // Genera código DAO y entidades.
+
+    // --- RETROFIT (CONEXIÓN A INTERNET/API) ---
+    implementation("com.squareup.retrofit2:retrofit:2.9.0") // Cliente HTTP
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0") // Conversor JSON a Kotlin
+    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0") // Para ver logs de las peticiones
+
     // --- COROUTINES (ASINCRONÍA) ---
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1") // Corrutinas base
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1") // Dispatcher para Android.
@@ -102,10 +110,11 @@ dependencies {
     // --- SPLASH SCREEN (PANTALLA DE CARGA NATIVA) ---
     implementation("androidx.core:core-splashscreen:1.0.1")
 
+    // --- TEST UNITARIOS (MOCKK & JUNIT) ---
+    testImplementation("io.mockk:mockk:1.13.8") // Para simular objetos (Mocking)
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3") // Para testear corrutinas
+
     // --- DEBUG Y HERRAMIENTAS DE VISTA PREVIA ---
     debugImplementation("androidx.compose.ui:ui-tooling:1.6.7") // Herramientas de diseño
     debugImplementation("androidx.compose.ui:ui-test-manifest:1.6.7") // Manifesto de pruebas UI
-    implementation("androidx.room:room-runtime:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
-    kapt("androidx.room:room-compiler:2.6.1")
 }
