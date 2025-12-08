@@ -5,7 +5,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object ApiClient {
 
-    private const val BASE_URL = "ms-db-client-mobile.railway.internal/"
+    private const val BASE_URL = "https://ms-db-client-mobile-production.up.railway.app/"
 
     val instance: ApiService by lazy {
         val retrofit = Retrofit.Builder()

@@ -2,6 +2,8 @@ package com.example.geo_moba.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.geo_moba.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,10 +25,9 @@ data class LoginUiState(
  * ViewModel para la pantalla de login.
  * Maneja la autenticación de usuarios contra el backend.
  */
-class LoginViewModel : ViewModel() {
-
-    // Instancia del repositorio que se conecta a la API
-    private val userRepository = UserRepository()
+class LoginViewModel(
+    private val userRepository: UserRepository = UserRepository() // Inyección por constructor con valor por defecto
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
@@ -66,6 +67,15 @@ class LoginViewModel : ViewModel() {
                     isLoading = false,
                     errorMessage = error.message ?: "Credenciales incorrectas"
                 )
+            }
+        }
+    }
+    
+    // Factory para crear el ViewModel (si se necesitara inyección manual estricta)
+    companion object {
+        val Factory = viewModelFactory {
+            initializer {
+                LoginViewModel(UserRepository())
             }
         }
     }
