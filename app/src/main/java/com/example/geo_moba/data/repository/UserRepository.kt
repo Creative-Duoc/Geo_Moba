@@ -1,41 +1,37 @@
 package com.example.geo_moba.data.repository
 
-import com.example.geo_moba.data.local.UserDao
-import com.example.geo_moba.model.UserEntity
-class UserRepository(private val userDao: UserDao) {
+import com.example.geo_moba.data.network.ApiClient
+import com.example.geo_moba.data.network.LoginRequest
+import com.example.geo_moba.data.network.RegisterRequest
+import com.example.geo_moba.data.network.UserResponse
 
-    /**
-     * Registra un nuevo usuario en la base de datos.
-     * Valida que el email no exista antes de insertarlo.
-     */
-    suspend fun registerUser(name: String, email: String, password: String): Result<Long> {
+class UserRepository {
+
+    private val apiService = ApiClient.instance
+
+    suspend fun registerUser(name: String, email: String, password: String): Result<UserResponse> {
         return try {
-            if (userDao.emailExists(email)) {
-                Result.failure(Exception("El correo ya está registrado"))
+            val request = RegisterRequest(nombre = name, email = email, password = password)
+            val response = apiService.register(request)
+
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
             } else {
-                // Crear el entity y guardarlo
-                val user = UserEntity(
-                    name = name,
-                    email = email,
-                    password = password
-                )
-                val userId = userDao.insertUser(user)
-                Result.success(userId)
+                val errorMsg = response.errorBody()?.string() ?: "Error en el registro"
+                Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    /**
-     * Intenta hacer login con las credenciales proporcionadas.
-     * Consulta la base de datos y retorna el usuario si coincide.
-     */
-    suspend fun login(email: String, password: String): Result<UserEntity> {
+    suspend fun login(email: String, password: String): Result<UserResponse> {
         return try {
-            val user = userDao.login(email, password)
-            if (user != null) {
-                Result.success(user)
+            val request = LoginRequest(email = email, password = password)
+            val response = apiService.login(request)
+
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
             } else {
                 Result.failure(Exception("Credenciales incorrectas"))
             }
@@ -43,12 +39,4 @@ class UserRepository(private val userDao: UserDao) {
             Result.failure(e)
         }
     }
-
-    /**
-     * Obtiene todos los usuarios (útil para debug).
-     */
-    suspend fun getAllUsers(): List<UserEntity> {
-        return userDao.getAllUsers()
-    }
 }
-
