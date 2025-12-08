@@ -1,9 +1,7 @@
 package com.example.geo_moba.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.geo_moba.data.local.AppDatabase
 import com.example.geo_moba.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,16 +18,9 @@ data class RegisterUiState(
     val isSuccess: Boolean = false
 )
 
-class RegisterViewModel(application: Application) : AndroidViewModel(application) {
+class RegisterViewModel : ViewModel() {
 
-    // 1. Obtener la instancia de la base de datos
-    private val database = AppDatabase.getInstance(application)
-
-    // 2. Obtener el UserDao de la base de datos
-    private val userDao = database.userDao()
-
-    // 3. Crear el repositorio con el UserDao
-    private val userRepository = UserRepository(userDao)
+    private val userRepository = UserRepository()
 
     private val _uiState = MutableStateFlow(RegisterUiState())
     val uiState: StateFlow<RegisterUiState> = _uiState.asStateFlow()
@@ -58,25 +49,22 @@ class RegisterViewModel(application: Application) : AndroidViewModel(application
         // Mostrar loading
         _uiState.value = s.copy(isLoading = true, errorMessage = null)
 
-        // Usar coroutine para operación asíncrona
+        // Usar coroutine para la llamada a la API
         viewModelScope.launch {
-            // Llamar al repositorio para registrar el usuario en SQLite
             val result = userRepository.registerUser(
                 name = s.name,
                 email = s.email,
                 password = s.password
             )
 
-            // Manejar el resultado
-            if (result.isSuccess) {
+            result.onSuccess {
                 // Registro exitoso
-                _uiState.value = RegisterUiState(isSuccess = true)
-            } else {
+                _uiState.value = _uiState.value.copy(isLoading = false, isSuccess = true)
+            }.onFailure { error ->
                 // Error en el registro
-                val errorMsg = result.exceptionOrNull()?.message ?: "Error al registrar"
                 _uiState.value = s.copy(
                     isLoading = false,
-                    errorMessage = errorMsg
+                    errorMessage = error.message ?: "Error desconocido"
                 )
             }
         }

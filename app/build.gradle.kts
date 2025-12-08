@@ -72,6 +72,10 @@ dependencies {
     implementation(libs.androidx.constraintlayout)   // Layout flexible y moderno.
     implementation(libs.play.services.maps)          // Google Maps SDK for Android.
     testImplementation(libs.junit)                   // Framework de pruebas unitarias.
+    testImplementation("org.mockito:mockito-core:5.11.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+    testImplementation("app.cash.turbine:turbine:1.1.0")
     androidTestImplementation(libs.androidx.junit)   // Pruebas instrumentadas.
     androidTestImplementation(libs.androidx.espresso.core) // Pruebas UI automáticas.
 
@@ -106,6 +110,11 @@ dependencies {
     // --- COROUTINES (ASINCRONÍA) ---
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1") // Corrutinas base
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1") // Dispatcher para Android.
+
+    // --- RETROFIT (NETWORKING) ---
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.9.3") // Para depuración
 
     // --- SPLASH SCREEN (PANTALLA DE CARGA NATIVA) ---
     implementation("androidx.core:core-splashscreen:1.0.1")

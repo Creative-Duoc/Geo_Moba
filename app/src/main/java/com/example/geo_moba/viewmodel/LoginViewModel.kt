@@ -1,9 +1,7 @@
 package com.example.geo_moba.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.geo_moba.data.local.AppDatabase
 import com.example.geo_moba.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,14 +21,12 @@ data class LoginUiState(
 
 /**
  * ViewModel para la pantalla de login.
- * Maneja la autenticación de usuarios contra la base de datos local.
+ * Maneja la autenticación de usuarios contra el backend.
  */
-class LoginViewModel(application: Application) : AndroidViewModel(application) {
+class LoginViewModel : ViewModel() {
 
-    // Instancia de la base de datos y repositorio (Room)
-    private val database = AppDatabase.getInstance(application)
-    private val userDao = database.userDao()
-    private val userRepository = UserRepository(userDao)
+    // Instancia del repositorio que se conecta a la API
+    private val userRepository = UserRepository()
 
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
@@ -44,7 +40,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * Intenta hacer login verificando las credenciales en la base de datos.
+     * Intenta hacer login verificando las credenciales contra el backend.
      */
     fun login() {
         val s = _uiState.value
@@ -58,19 +54,18 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = s.copy(isLoading = true, errorMessage = null)
 
         viewModelScope.launch {
-            try {
-                // Consulta real a través del repositorio
-                val result = userRepository.login(s.email, s.password)
+            // Llamada al repositorio para el login remoto
+            val result = userRepository.login(s.email, s.password)
 
-                if (result.isSuccess) {
-                    // Login exitoso
-                    _uiState.value = LoginUiState(isSuccess = true)
-                } else {
-                    val err = result.exceptionOrNull()?.message ?: "Usuario o contraseña incorrectos"
-                    _uiState.value = s.copy(isLoading = false, errorMessage = err)
-                }
-            } catch (e: Exception) {
-                _uiState.value = s.copy(isLoading = false, errorMessage = "Error al acceder a la base de datos")
+            result.onSuccess {
+                // Login exitoso
+                _uiState.value = _uiState.value.copy(isLoading = false, isSuccess = true)
+            }.onFailure { error ->
+                // Error en el login
+                _uiState.value = s.copy(
+                    isLoading = false,
+                    errorMessage = error.message ?: "Credenciales incorrectas"
+                )
             }
         }
     }
