@@ -32,9 +32,19 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("release.keystore")
+            storePassword = "GeoMoba2025"
+            keyAlias = "key0"
+            keyPassword = "GeoMoba2025"
+        }
+    }
+
     // --- BLOQUE DE BUILD TYPES ---
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false // Evita ofuscación para desarrollo (usar true en producción)
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
