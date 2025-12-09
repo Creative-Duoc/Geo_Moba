@@ -18,9 +18,9 @@ data class RegisterUiState(
     val isSuccess: Boolean = false
 )
 
-class RegisterViewModel : ViewModel() {
-
-    private val userRepository = UserRepository()
+class RegisterViewModel(
+    private val userRepository: UserRepository = UserRepository() // Inyección por constructor
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RegisterUiState())
     val uiState: StateFlow<RegisterUiState> = _uiState.asStateFlow()
@@ -32,15 +32,19 @@ class RegisterViewModel : ViewModel() {
     fun register() {
         val s = _uiState.value
 
-        // Validaciones de los campos
+        // Validaciones de los campos (Lógica local, fácil de testear)
         if (s.name.isBlank() || s.email.isBlank() || s.password.isBlank()) {
             _uiState.value = s.copy(errorMessage = "Complete todos los campos")
             return
         }
+        
+        // Esta validación depende de Android (Patterns), en test unitario puro podría fallar si no se configura Robolectric o se abstrae.
+        // Para simplificar el test unitario básico, testearemos validaciones de longitud y vacíos primero.
         if (!android.util.Patterns.EMAIL_ADDRESS.matcher(s.email).matches()) {
             _uiState.value = s.copy(errorMessage = "Correo inválido")
             return
         }
+        
         if (s.password.length < 6) {
             _uiState.value = s.copy(errorMessage = "Mínimo 6 caracteres")
             return

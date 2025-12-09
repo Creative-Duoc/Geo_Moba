@@ -33,24 +33,28 @@ fun HomeScreen(
             Spacer(Modifier.height(16.dp))
 
             // Lista de dispositivos desde el repositorio
-            devices.forEach { device ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
+            if (devices.isEmpty()) {
+                Text("No hay dispositivos o cargando...", style = MaterialTheme.typography.bodyMedium)
+            } else {
+                devices.forEach { device ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
 
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "📱 ${device.name}",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = "Lat: ${"%.4f".format(device.latitude)}, Lng: ${"%.4f".format(device.longitude)}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "📱 ${device.name}",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = "Lat: ${"%.4f".format(device.latitude)}, Lng: ${"%.4f".format(device.longitude)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
